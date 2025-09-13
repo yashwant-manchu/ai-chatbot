@@ -5,7 +5,16 @@ import OpenAI from "openai";
 
 dotenv.config();
 const app = express();
-app.use(cors());
+
+// Configure CORS with options
+const corsOptions = {
+  origin: ['http://localhost:5173', 'https://ai-chatbot-lime-beta.vercel.app'], // Add your frontend URLs
+  methods: ['GET', 'POST'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 
 const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -18,12 +27,12 @@ app.post("/api/chat", async (req, res) => {
   try {
     const { model = "gpt-3.5-turbo", messages = [] } = req.body || {};
 
-    const response = await client.responses.create({
+    const response = await client.chat.completions.create({
       model,
-      input: messages.map(({ role, content }) => ({ role, content })),
+      messages: messages.map(({ role, content }) => ({ role, content })),
     });
 
-    const text = response.output_text ?? "(no output_text)";
+    const text = response.choices[0]?.message?.content ?? "(no response)";
     res.json({ text });
   } catch (err) {
     console.error(err);
